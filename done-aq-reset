@@ -1,0 +1,61 @@
+#!/usr/bin/python
+from ConfigParser import SafeConfigParser
+import xmlrpclib
+import urllib2
+import urllib
+from xml.etree import ElementTree
+import xml.etree.ElementTree as ET
+import logging
+import requests
+import subprocess
+import sys
+from socket import gethostname
+from requests.auth import HTTPBasicAuth
+from requests_kerberos import HTTPKerberosAuth
+
+vm_id = sys.argv[1]
+template = sys.argv[2]
+
+with open("userauth","r") as authfile:
+	auth_string = authfile.read().replace('\n','')
+
+hostname = "dev-hn1.nubes.rl.ac.uk"
+server = xmlrpclib.ServerProxy("https://"+hostname+"/RPC2")
+response = server.one.user.login(auth_string, "testgroup", "dontleaveblank", 1000)
+sessionid = response[1]
+one_auth = "testgroup:" + sessionid
+
+vm_xml = server.one.vm.info(one_auth, int(vm_id))[1]
+vm_pool = ET.fromstring(vm_xml)
+
+logging.info("ONEHOOK - VM: " + vm_id + " - Aquilon Reset") 
+
+ip_address = vm_pool.find("TEMPLATE/NIC/IP").text
+aq_host_url = "http://aquilon.gridpp.rl.ac.uk:6901/find/host?ip=" + ip_address
+aq_host  = requests.get(aq_host_url).text
+with open("/tmp/aq-" + aq_host, "w") as aq_hostname:
+	aq_hostname.write(aq_host + " " + ip_address)
+
+url_prefix = "https://aquilon.gridpp.rl.ac.uk/private/aqd.cgi"
+
+domain = requests.get(url_prefix + "/command/manage_hostname?hostname=" + aq_host + "&domain=prod&force=true", auth=HTTPKerberosAuth()).text
+print domain
+
+domain = "domain"
+counter = 0
+while domain != "No data" and domain != "" and counter < 5:
+	domain = requests.get(url_prefix + "/command/manage_hostname?hostname=" + aq_host + "&domain=prod&force=true", auth=HTTPKerberosAuth()).text
+	counter += 1
+	if domain == "No data" or domain == "":
+		#kinit -k HTTP/<hostname>
+		pass
+
+if domain == 5:
+	logging.info("ONEHOOK - VM: " + vm_id + " - AQ Domain Failed")
+else:
+	logging.info("ONEHOOK - VM: " + vm_id + " - AQ Domain Assigned")
+
+with open("/tmp/aq-hostname", "w") as aq_hostname:
+	aq_hostname.write(domain)
+	
+

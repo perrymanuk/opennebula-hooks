@@ -1,0 +1,45 @@
+#!/usr/bin/python
+from ConfigParser import SafeConfigParser
+import xmlrpclib
+import urllib2
+import urllib
+from xml.etree import ElementTree
+import xml.etree.ElementTree as ET
+import logging
+import requests
+import subprocess
+import sys
+from socket import gethostname
+from requests.auth import HTTPBasicAuth
+
+vm_id = sys.argv[1]
+template = sys.argv[2]
+
+with open("userauth","r") as authfile:
+    auth_string = authfile.read().replace('\n','')
+
+hostname = "dev-hn1.nubes.rl.ac.uk"
+server = xmlrpclib.ServerProxy("https://"+hostname+"/RPC2")
+response = server.one.user.login(auth_string, "testgroup", "dontleaveblank", 1000)
+sessionid = response[1]
+one_auth = "testgroup:" + sessionid
+
+vm_xml = server.one.vm.info(one_auth, int(vm_id))[1]
+vm_pool = ET.fromstring(vm_xml)
+
+group_xml = server.one.grouppool.info(one_auth)[1]
+group_pool = ET.fromstring(group_xml)
+
+user_id = vm_pool.find("UID").text
+group_id = vm_pool.find("GID").text
+group_share = group_pool.find("GROUP/TEMPLATE/GROUPSHAREPERMS").text
+
+def calculate_binary(decimal):
+	binary = bin(decimal)[2:]
+	binaryString = format(int(binary),"03")
+
+	return binaryString
+	
+binary = calculate_binary(int(group_share))
+print "Group share: " + group_share
+response = server.one.vm.chmod(one_auth, int(vm_id),-1,-1,-1,int(binary[0]),int(binary[1]),int(binary[2]),-1,-1,-1)[1]
