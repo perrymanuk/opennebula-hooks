@@ -26,7 +26,7 @@ except:
    print "Unable to read from config file"
    sys.exit(1)
 
-url = "http://"+host+"/write?db="+database
+influx_url = "http://"+host+"/write?db="+database
 
 with open("userauth","r") as authfile:
 	auth_string = authfile.read().replace("\n","")
@@ -87,7 +87,7 @@ def ssh_touch(ip):
 
 def send_to_influxdb(value, data_title, ip, template_id, template_name):
 	print time.ctime() + ": Sending to influxdb..."
-	request = requests.post(url, data_title + ",ip=" + ip + ",template_id=" + str(template_id) + ",template_name=" + template_name + " value=" + value, auth=(username,password))
+	request = requests.post(influx_url, data_title + ",ip=" + ip + ",template_id=" + str(template_id) + ",template_name=" + template_name + " value=" + value, auth=(username,password))
 
 def instantiate_vm(template_id, template_name):
 	print time.ctime() + ": Creating template " + template_id + " for " + template_name
@@ -124,4 +124,4 @@ def run():
 				print time.ctime() + ": \033[0;31mCouldn't create template " + template_id + "(error " + str(error_code) + "\033[1;m"
 				print time.ctime() + ": \033[0;31m" + vm_id + "\033[1;m"
 
-
+run()
