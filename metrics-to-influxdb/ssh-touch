@@ -14,10 +14,11 @@ from requests.auth import HTTPBasicAuth
 from ConfigParser import SafeConfigParser
 import time
 
-def ssh_touch(ip):
-	print time.ctime() + ": SSHing..."
-	start = time.time()
-	command = subprocess.call(["ssh", "testgroup@" + str(ip), "touch", "testfile"])
-	elapsed = str(time.time() - start)[0:4]
+with open("userauth","r") as authfile:
+	auth_string = authfile.read().replace("\n","")
 
-	return elapsed
+hostname = "dev-hn1.nubes.rl.ac.uk"
+server = xmlrpclib.ServerProxy("https://"+hostname+"/RPC2")
+response = server.one.user.login(auth_string, "testgroup", "dontleaveblank", 1000)
+session_id = response[1]
+one_auth = "testgroup:" + session_id
