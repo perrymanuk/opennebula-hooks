@@ -11,11 +11,9 @@ import sys
 from socket import gethostname
 from requests.auth import HTTPBasicAuth
 
-with open("userauth","r") as authfile:
-	auth_string = authfile.read().replace("\n","")
-
-hostname = "dev-hn1.nubes.rl.ac.uk"
-server = xmlrpclib.ServerProxy("https://"+hostname+"/RPC2")
-response = server.one.user.login(auth_string, "testgroup", "dontleaveblank", 1000)
-session_id = response[1]
-one_auth = "testgroup:" + session_id
+def get_average_ping(ip):
+	ping = subprocess.Popen(["fping", "-c", "3", ip], stdout=subprocess.PIPE)
+	out = ping.communicate() 
+	avg_ping = out[0][35:37]
+	
+	return str(avg_ping)
