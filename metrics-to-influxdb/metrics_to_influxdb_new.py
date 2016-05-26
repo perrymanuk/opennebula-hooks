@@ -25,14 +25,21 @@ response = server.one.user.login(auth_string, "testgroup", "dontleaveblank", 100
 session_id = response[1]
 one_auth = "testgroup:" + session_id
 
-vm_xml = server.one.vmpool.info(one_auth, -1, -1, -1, 3)[1]
-vm_pool = ET.fromstring(vm_xml)
+def get_vm_xml():
+	vm_xml = server.one.vmpool.info(one_auth, -1, -1, -1, 3)[1]
+	vm_pool = ET.fromstring(vm_xml)
 
-template_xml = server.one.templatepool.info(one_auth, -1, -1, -1)[1]
-template_pool = ET.fromstring(template_xml)
+def get_template_xml():
+	template_xml = server.one.templatepool.info(one_auth, -1, -1, -1)[1]
+	template_pool = ET.fromstring(template_xml)
 
-user_xml = server.one.user.info(one_auth, -1)[1]
-user_pool = ET.fromstring(user_xml)
+	return template_pool
+
+def get_user_xml():
+	user_xml = server.one.user.info(one_auth, -1)[1]
+	user_pool = ET.fromstring(user_xml)
+
+	return user_pool
 
 def update_vm_pool():
 	vm_xml = server.one.vmpool.info(one_auth, -1, -1, -1, 3)[1]
@@ -42,7 +49,7 @@ def update_vm_pool():
 
 def delete_vm(vm_id):
 	delete = server.one.vm.action(one_auth, "delete", vm_id)[0]
-		
+
 	return delete
 
 def get_vm_ip(vm_id):
@@ -52,7 +59,7 @@ def get_vm_ip(vm_id):
 		if vm_id == int(vm.find("ID").text):
 			ip = vm.find("TEMPLATE/NIC/IP").text
 		else:
-			ip = "unknown"
+			ip = "err"
 
 	return ip
 
@@ -65,13 +72,11 @@ def instantiate_vm(template_id, template_name):
 
 	return status, vm_id, error_code
 
-
 def run():
 	for vm_template in template_pool.findall("VMTEMPLATE"):
 		template_id = vm_template.find("ID").text
 		template_name = vm_template.find("NAME").text
 
-		print time.ctime() + ": Creating template " + template_id + " for " + template_name
 		status, vm_id, error_code = instantiate_vm(template_id, template_name)
 
 		if not status:
@@ -80,22 +85,17 @@ def run():
 		else:
 			time.sleep(240)
 
-			ip = get_vm_ip(vm_id)
-			ping = get_average_ping(ip)
-			ssh = ssh_touch(ip)
-		
-			send_to_influxdb(ping, "time_to_pingable", ip, template_id, tempalte_name)
-			send_to_influxdb(ssh, "time_to_sshable", ip, template_id, template_name)
+			ping = get_average_ping(vm_id)
+			ssh = ssh_touch(vm_id)
+
+			send_to_influxdb(ping, "time_to_pingable", get_vm_ip(), template_id, template_name)
+			send_to_influxdb(ssh, "time_to_sshable", get_vm_ip(), template_id, template_name)
 
 			delete_vm(vm_id)
 
 			if not delete:
 				time.ctime() + ": \033[0;31mCouldn't delete vm " + vm_id + " \033[1;m"
-					
-			time.sleep(15)
-	
-print(get_average_ping("130.246.223.226"))
 
+			time.sleep(15)
 
 run()
-
