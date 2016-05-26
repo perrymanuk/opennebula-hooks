@@ -12,7 +12,8 @@ import sys
 from socket import gethostname
 from requests.auth import HTTPBasicAuth
 from ConfigParser import SafeConfigParser
-import os 
+import os
+import re
 
 with open("userauth","r") as authfile:
 	auth_string = authfile.read().replace("\n","")
@@ -26,24 +27,27 @@ one_auth = "testgroup:" + session_id
 vm_xml = server.one.vmpool.info(one_auth, -1, -1, -1, 3)[1]
 vm_pool = ET.fromstring(vm_xml)
 
-vm_id = sys.argv[1]
-
 def get_vm_ip(vm_id):
 	for vm in vm_pool.findall("VM"):
 		if int(vm_id) == int(vm.find("ID").text):
 			ip = vm.find("TEMPLATE/NIC/IP").text
 			break
 		else:
-			ip = "unknown"
+			ip = "err"
 
 	return ip
 
 def get_average_ping(ip):
-	ping = subprocess.Popen(["fping", "-c", "3", ip], stdout=subprocess.PIPE)
-	out = ping.communicate() 
-	avg_ping = out[0][33:35]
+	ping = subprocess.Popen(["ping", "-c", "3", ip], stdout=subprocess.PIPE)
+	out = ping.communicate()
 
-	print ping	
-	return str(avg_ping)
-	
-print get_average_ping(get_vm_ip(vm_id))
+	avg_ping = re.search('mdev = \d+.\d+\/(\d+.\d+)\/', str(out))
+
+	if avg_ping:
+		return avg_ping.group(1)
+	else:
+		return "err"
+
+if __name__ == "__main__":
+	vm_id = sys.argv[1]
+	print get_average_ping(get_vm_ip(vm_id))
