@@ -50,4 +50,4 @@ def get_average_ping(ip):
 
 if __name__ == "__main__":
 	vm_id = sys.argv[1]
-	print get_average_ping(get_vm_ip(vm_id))
+	print "Average ping: " + get_average_ping(get_vm_ip(vm_id))
