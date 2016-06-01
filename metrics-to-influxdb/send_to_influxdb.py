@@ -36,3 +36,13 @@ server = xmlrpclib.ServerProxy("https://"+hostname+"/RPC2")
 response = server.one.user.login(auth_string, "testgroup", "dontleaveblank", 1000)
 session_id = response[1]
 one_auth = "testgroup:" + session_id
+
+def send_to_influxdb(value, data_title, ip, template_id, template_name):
+	request = requests.post(influx_url, data_title + 
+				",ip=" + ip + 
+				",template_id=" + str(template_id) + 
+				",template_name=" + template_name + 
+				" value=" + value, 
+				auth=(username,password))
+
+	request.raise_for_status()

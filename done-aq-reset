@@ -1,3 +1,4 @@
+#INCOMPLETE
 #!/usr/bin/python
 from ConfigParser import SafeConfigParser
 import xmlrpclib
@@ -28,7 +29,7 @@ one_auth = "testgroup:" + sessionid
 vm_xml = server.one.vm.info(one_auth, int(vm_id))[1]
 vm_pool = ET.fromstring(vm_xml)
 
-logging.info("ONEHOOK - VM: " + vm_id + " - Aquilon Reset") 
+logging.info("ONEHOOK - VM: " + vm_id + " - Aquilon Reset")
 
 ip_address = vm_pool.find("TEMPLATE/NIC/IP").text
 aq_host_url = "http://aquilon.gridpp.rl.ac.uk:6901/find/host?ip=" + ip_address
@@ -57,5 +58,3 @@ else:
 
 with open("/tmp/aq-hostname", "w") as aq_hostname:
 	aq_hostname.write(domain)
-	
-
