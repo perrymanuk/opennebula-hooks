@@ -1,5 +1,5 @@
-#INCOMPLETE
 #!/usr/bin/python
+#INCOMPLETE
 from ConfigParser import SafeConfigParser
 import xmlrpclib
 import urllib2
