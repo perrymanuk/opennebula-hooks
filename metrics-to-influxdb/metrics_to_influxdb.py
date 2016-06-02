@@ -68,7 +68,6 @@ def instantiate_vm(template_id, template_name):
 
 	return status, vm_id, error_code
 
-
 def run():
 	for vm_template in template_pool.findall("VMTEMPLATE"):
 		template_id = vm_template.find("ID").text
@@ -97,4 +96,4 @@ def run():
 
 			time.sleep(15)
 
-print get_average_ping(get_vm_ip(vm_id))
+run()
